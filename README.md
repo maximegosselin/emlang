@@ -1,6 +1,7 @@
 # Emlang
 
-> **Status**: v0.1.0 — Draft specification
+![License](https://img.shields.io/github/license/maximegosselin/emlang)
+![GitHub release](https://img.shields.io/github/v/release/maximegosselin/emlang)
 
 Emlang is a text-based DSL for describing systems with Event Modeling patterns.
 
