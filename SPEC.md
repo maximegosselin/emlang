@@ -4,6 +4,8 @@
 
 Emlang is a text-based DSL for describing systems with Event Modeling patterns.
 
+File extension: `.emlang`
+
 ## Elements
 
 Emlang has 7 element types:

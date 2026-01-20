@@ -1,5 +1,7 @@
 # Emlang
 
+> **Status**: v0.1 — Draft specification
+
 Emlang is a text-based DSL for describing systems with Event Modeling patterns.
 
 ## Why Emlang?
@@ -141,3 +143,15 @@ Partial flows are valid — useful for early exploration:
   <OrderCancelled>
   <RefundIssued>
 ```
+
+## Tools
+
+A linter is currently in development. More tools coming soon.
+
+## Contributing
+
+Open an issue before submitting a pull request.
+
+## License
+
+[MIT](LICENSE)
