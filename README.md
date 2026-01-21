@@ -1,4 +1,4 @@
-# Emlang
+# Emlang Specification
 
 ![License](https://img.shields.io/github/license/emlang-project/spec)
 ![GitHub release](https://img.shields.io/github/v/release/emlang-project/spec)
