@@ -3,28 +3,6 @@
 ![License](https://img.shields.io/github/license/emlang-project/spec)
 ![GitHub release](https://img.shields.io/github/v/release/emlang-project/spec)
 
-Emlang is a text-based DSL for describing systems with Event Modeling patterns.
-
-## Why Emlang?
-
-Event Modeling is typically done using visual tools like Miro or oNote. These tools are great for collaboration, but diagrams don't fit naturally into a developer's workflow — they can't be versioned, diffed, or reviewed like code.
-
-Emlang bridges that gap:
-
-- **Text-based** — Version control, diffs, code review workflows
-- **Parseable** — Tools can generate diagrams, code, or documentation
-- **Complementary** — Works alongside visual tools, not against them
-
-Visual diagrams remain the best way to understand a system. Emlang is a versionable source format that tools can parse to generate those diagrams.
-
-## Philosophy
-
-Emlang is **minimalist**:
-
-- **Syntax, not semantics** — Emlang defines how to write elements, not what makes a valid model
-- **No methodology enforcement** — Event Modeling rules live at https://eventmodeling.org/
-- **Tool responsibility** — Validation and code generation are done by separate tools
-
 ## Quick Reference
 
 | Notation | Type      | Description           |
