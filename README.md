@@ -68,62 +68,70 @@ flows:
     - v: OrderConfirmation
 ```
 
-### Multiple Flows with Tests
+### Flow with Attached Tests (Extended Form)
 
-A document containing related flows and their tests:
+Tests can be attached directly to a flow using the extended form with `steps:` and `tests:`. The `for:` key positions the test visually in diagrams:
 
 ```yaml
 ---
 flows:
   RegisterUser:
-    - t: Customer/RegistrationForm
-    - c: RegisterUser
-      props:
-        email: string
-        password: string
-    - e: User/UserRegistered
-      props:
-        userId: uuid
-        email: string
-    - v: UserProfile
+    steps:
+      - t: Customer/RegistrationForm
+      - c: RegisterUser
+        props:
+          email: string
+          password: string
+      - e: User/UserRegistered
+        props:
+          userId: uuid
+          email: string
+      - v: UserProfile
+    tests:
+      RegistrationCreatesProfile:
+        for: RegisterUser
+        when:
+          - c: RegisterUser
+            props:
+              email: alice@example.com
+              password: secret123
+        then:
+          - e: User/UserRegistered
 
+      DuplicateEmailRejected:
+        for: RegisterUser
+        given:
+          - e: User/UserRegistered
+            props:
+              email: alice@example.com
+        when:
+          - c: RegisterUser
+            props:
+              email: alice@example.com
+        then:
+          - x: EmailAlreadyUsed
+```
+
+### Exploratory Tests (Root Level)
+
+Tests at the root level are useful during early modeling when flows are not yet well-defined:
+
+```yaml
+---
+flows:
   LoginUser:
     - t: Customer/LoginForm
     - c: LoginUser
-      props:
-        email: string
-        password: string
     - e: User/UserLoggedIn
-      props:
-        userId: uuid
-        sessionId: uuid
     - v: Dashboard
 
+# Exploratory tests, not yet attached to a flow
 tests:
-  RegistrationCreatesProfile:
+  SomeEarlyIdea:
     when:
-      - c: RegisterUser
-        props:
-          email: alice@example.com
-          password: secret123
+      - c: ResetPassword
     then:
-      - e: User/UserRegistered
-        props:
-          userId: user-1
-          email: alice@example.com
-
-  DuplicateEmailRejected:
-    given:
-      - e: User/UserRegistered
-        props:
-          email: alice@example.com
-    when:
-      - c: RegisterUser
-        props:
-          email: alice@example.com
-          password: newpassword
-    then:
-      - x: EmailAlreadyUsed
+      - e: PasswordResetRequested
 ```
 
 ### Event Storming Notes

@@ -1,10 +1,10 @@
-# Emlang Specification v0.2.0
+# Emlang Specification v0.3.0
 
 Emlang is a YAML-based DSL for describing systems with Event Modeling patterns.
 
 ## Overview
 
-Emlang v0.2.0 uses standard YAML syntax, making it compatible with all YAML tooling (syntax highlighting, formatting,
+Emlang uses standard YAML syntax, making it compatible with all YAML tooling (syntax highlighting, formatting,
 validation). The domain-specific semantics come from the structure and element prefixes.
 
 An Emlang file contains one or more YAML documents (separated by `---`), each with `flows:` and/or `tests:` top-level
@@ -13,13 +13,29 @@ keys.
 ```yaml
 ---
 flows:
+  # Direct form: list of elements
   FlowName:
     - t: Swimlane/TriggerName
     - c: DoSomething
     - e: SomethingDone
 
+  # Extended form: steps with attached tests
+  AnotherFlow:
+    steps:
+      - t: Swimlane/Trigger
+      - c: DoAction
+      - e: ActionDone
+    tests:
+      TestName:
+        for: DoAction
+        when:
+          - c: DoAction
+        then:
+          - e: ActionDone
+
+# Exploratory tests (not attached to a flow)
 tests:
-  TestName:
+  ExploratoryTest:
     given:
       - e: PreviousEvent
     when:
@@ -105,6 +121,10 @@ Properties can also be a list:
 
 A flow is a named sequence of elements representing a business scenario.
 
+### Direct Form
+
+When a flow has no attached tests, use the direct form (list of elements):
+
 ```yaml
 ---
 flows:
@@ -114,6 +134,38 @@ flows:
     - e: User/UserRegistered
     - v: UserProfile
 ```
+
+### Extended Form
+
+When a flow has attached tests, use the extended form with `steps:` and `tests:`:
+
+```yaml
+---
+flows:
+  UserRegistration:
+    steps:
+      - t: Customer/RegistrationForm
+      - c: RegisterUser
+      - e: User/UserRegistered
+      - v: UserProfile
+    tests:
+      EmailMustBeUnique:
+        for: RegisterUser
+        given:
+          - e: User/UserRegistered
+            props:
+              email: joe@example.com
+        when:
+          - c: RegisterUser
+            props:
+              email: joe@example.com
+        then:
+          - x: EmailAlreadyInUse
+```
+
+The `for:` key attaches the test to a specific element in the flow for visual placement in diagrams. It references an element by name within the same flow.
+
+Both forms are valid and can coexist in the same document. A parser detects the form by checking if the flow value is a list (direct) or a mapping with `steps:` (extended).
 
 ### Multiple Flows
 
@@ -150,6 +202,15 @@ flows:
 
 A test verifies behavior using a Given-When-Then structure.
 
+Tests can be defined in two places:
+
+| Location | Purpose |
+|----------|---------|
+| Inside a flow (`tests:` in extended form) | Attached tests, displayed in diagrams |
+| At document root (`tests:`) | Exploratory tests, not yet attached to a flow |
+
+Exploratory tests at the root level are useful during early modeling when flows are not yet well-defined. As the model matures, tests can be moved into their respective flows.
+
 ### Test Structure
 
 Each test has three sections:
@@ -175,6 +236,35 @@ tests:
     then:
       - x: EmailAlreadyInUse
 ```
+
+### Attaching Tests to Flow Elements
+
+Tests defined inside a flow (extended form) can use the `for:` key to attach to a specific element for visual placement in diagrams:
+
+```yaml
+---
+flows:
+  UserRegistration:
+    steps:
+      - t: Customer/RegistrationForm
+      - c: RegisterUser
+      - e: User/UserRegistered
+    tests:
+      EmailMustBeUnique:
+        for: RegisterUser
+        given:
+          - e: User/UserRegistered
+            props:
+              email: joe@example.com
+        when:
+          - c: RegisterUser
+            props:
+              email: joe@example.com
+        then:
+          - x: EmailAlreadyInUse
+```
+
+The `for:` key is only valid for tests inside a flow. It references an element by name within the same flow. The diagram generator uses this to position the test visually below the referenced element.
 
 ### Test with Exception
 
@@ -322,20 +412,46 @@ flows:
 ```yaml
 ---
 flows:
+  # Extended form: flow with attached tests
   UserRegistration:
-    - t: Customer/RegistrationForm
-    - c: RegisterUser
-      props:
-        email: string
-        password: string
-    - e: User/UserRegistered
-      props:
-        userId: uuid
-        email: string
-        registeredAt: iso8601
-    - e: User/WelcomeEmailSent
-    - v: UserProfile
+    steps:
+      - t: Customer/RegistrationForm
+      - c: RegisterUser
+        props:
+          email: string
+          password: string
+      - e: User/UserRegistered
+        props:
+          userId: uuid
+          email: string
+          registeredAt: iso8601
+      - e: User/WelcomeEmailSent
+      - v: UserProfile
+    tests:
+      EmailMustBeUnique:
+        for: RegisterUser
+        given:
+          - e: User/UserRegistered
+            props:
+              email: joe@example.com
+        when:
+          - c: RegisterUser
+            props:
+              email: joe@example.com
+        then:
+          - x: EmailAlreadyInUse
 
+      PasswordMustBeStrong:
+        for: RegisterUser
+        when:
+          - c: RegisterUser
+            props:
+              email: jane@example.com
+              password: "123"
+        then:
+          - x: PasswordTooWeak
+
+  # Direct form: flow without attached tests
   EmailVerification:
     - t: User/VerificationLink
     - c: VerifyEmail
@@ -344,44 +460,37 @@ flows:
     - e: User/EmailVerified
     - v: UserProfile
 
-tests:
-  EmailMustBeUnique:
-    given:
-      - e: User/UserRegistered
-        props:
-          email: joe@example.com
-    when:
-      - c: RegisterUser
-        props:
-          email: joe@example.com
-    then:
-      - x: EmailAlreadyInUse
-
-  PasswordMustBeStrong:
-    when:
-      - c: RegisterUser
-        props:
-          email: jane@example.com
-          password: "123"
-    then:
-      - x: PasswordTooWeak
-
 ---
 flows:
   OrderPlacement:
-    - t: Customer/Cart
-    - c: PlaceOrder
-      props:
-        customerId: uuid
-        items: array
-    - e: Order/OrderPlaced
-      props:
-        orderId: uuid
-        totalAmount: decimal
-    - e: Inventory/StockReserved
-    - e: Payment/PaymentRequested
-    - v: OrderConfirmation
+    steps:
+      - t: Customer/Cart
+      - c: PlaceOrder
+        props:
+          customerId: uuid
+          items: array
+      - e: Order/OrderPlaced
+        props:
+          orderId: uuid
+          totalAmount: decimal
+      - e: Inventory/StockReserved
+      - e: Payment/PaymentRequested
+      - v: OrderConfirmation
+    tests:
+      CannotCancelShippedOrder:
+        for: PlaceOrder
+        given:
+          - e: Order/OrderShipped
+            props:
+              orderId: order-123
+        when:
+          - c: CancelOrder
+            props:
+              orderId: order-123
+        then:
+          - x: OrderAlreadyShipped
 
+  # Direct form
   OrderCancellation:
     - t: Customer/OrderDetails
     - c: CancelOrder
@@ -393,16 +502,11 @@ flows:
     - e: Payment/RefundInitiated
     - v: OrderDetails
 
+# Exploratory tests at root level (not yet attached to a flow)
 tests:
-  CannotCancelShippedOrder:
-    given:
-      - e: Order/OrderShipped
-        props:
-          orderId: order-123
+  SomeEarlyIdea:
     when:
-      - c: CancelOrder
-        props:
-          orderId: order-123
+      - c: RefundOrder
     then:
-      - x: OrderAlreadyShipped
+      - e: Order/OrderRefunded
 ```

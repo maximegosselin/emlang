@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "emlang-v0.2.0",
+  "$id": "emlang-v0.3.0",
   "title": "Emlang",
-  "description": "Schema for Emlang v0.2.0 - Event Modeling DSL",
+  "description": "Schema for Emlang v0.3.0 - Event Modeling DSL",
   "type": "object",
   "properties": {
     "flows": {
@@ -20,7 +20,7 @@
         {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/$defs/elementList"
+            "$ref": "#/$defs/flow"
           }
         },
         {
@@ -28,16 +28,84 @@
         }
       ]
     },
+    "flow": {
+      "description": "A flow in direct or extended form",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/elementList"
+        },
+        {
+          "$ref": "#/$defs/extendedFlow"
+        }
+      ]
+    },
+    "extendedFlow": {
+      "description": "Extended flow with steps and optional tests",
+      "type": "object",
+      "properties": {
+        "steps": {
+          "$ref": "#/$defs/elementList"
+        },
+        "tests": {
+          "$ref": "#/$defs/flowTests"
+        }
+      },
+      "required": ["steps"],
+      "additionalProperties": false
+    },
     "tests": {
-      "description": "Named tests",
+      "description": "Exploratory tests at root level",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/test"
       }
     },
+    "flowTests": {
+      "description": "Tests attached to a flow",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/flowTest"
+      }
+    },
     "test": {
       "type": "object",
       "properties": {
+        "given": {
+          "description": "Pre-conditions (events, views)",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/givenElement"
+          }
+        },
+        "when": {
+          "description": "Command being tested",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/commandElement"
+          },
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "then": {
+          "description": "Expected results (events, views, exceptions)",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/thenElement"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["when", "then"],
+      "additionalProperties": false
+    },
+    "flowTest": {
+      "description": "Test attached to a flow with optional 'for' key",
+      "type": "object",
+      "properties": {
+        "for": {
+          "description": "Element name to attach test to for visual placement",
+          "type": "string"
+        },
         "given": {
           "description": "Pre-conditions (events, views)",
           "type": "array",
