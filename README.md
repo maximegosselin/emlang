@@ -3,131 +3,29 @@
 ![License](https://img.shields.io/github/license/emlang-project/spec)
 ![GitHub release](https://img.shields.io/github/v/release/emlang-project/spec)
 
-Emlang is a YAML-based DSL for describing systems with Event Modeling patterns.
+This repository contains the formal specification for Emlang, a YAML-based DSL for describing systems with [Event Modeling](https://eventmodeling.org) patterns.
 
-## Quick Reference
+## Contents
 
-| Type      | Short | Acronym | Long         | Description            |
-|-----------|-------|---------|--------------|------------------------|
-| Trigger   | `t:`  | `trg:`  | `trigger:`   | Initiates an action    |
-| Command   | `c:`  | `cmd:`  | `command:`   | Action/intent          |
-| Event     | `e:`  | `evt:`  | `event:`     | Past fact              |
-| Exception | `x:`  | `err:`  | `exception:` | Failure/error          |
-| View      | `v:`  | —       | `view:`      | Projection/Read Model  |
+- [SPEC.md](SPEC.md) — The specification (RFC 2119)
+- [schema.json](schema.json) — JSON Schema for validation
 
-See [SPEC.md](SPEC.md) for the complete specification and [schema.json](schema.json) for validation.
+## Schema Usage
 
-## Examples
-
-### User Registration
-
-A complete slice showing a user registering through a form:
+Use `schema.json` to validate Emlang files in your editor or CI pipeline:
 
 ```yaml
----
+# yaml-language-server: $schema=https://raw.githubusercontent.com/emlang-project/spec/main/schema.json
 slices:
-  RegisterUser:
-    - t: Customer/RegistrationForm
-    - c: RegisterUser
-      props:
-        email: string
-        password: string
-    - e: User/UserRegistered
-      props:
-        userId: uuid
-        email: string
-        registeredAt: iso8601
-    - v: UserProfile
+  MySlice:
+    - c: DoSomething
+    - e: SomethingDone
 ```
 
-### E-Commerce Checkout
+## Links
 
-Multiple slices representing the checkout process:
-
-```yaml
----
-slices:
-  StartCheckout:
-    - t: Customer/Cart
-    - c: StartCheckout
-    - e: Order/CheckoutStarted
-      props:
-        orderId: uuid
-        customerId: uuid
-        items: array
-    - v: CheckoutSummary
-
-  SubmitPayment:
-    - t: Customer/CheckoutSummary
-    - c: SubmitPayment
-      props:
-        orderId: uuid
-        paymentMethod: string
-    - e: Order/PaymentSubmitted
-    - e: Payment/PaymentProcessed
-    - v: OrderConfirmation
-```
-
-### Slice with Attached Tests (Extended Form)
-
-Tests are attached directly to a slice using the extended form with `steps:` and `tests:`:
-
-```yaml
----
-slices:
-  RegisterUser:
-    steps:
-      - t: Customer/RegistrationForm
-      - c: RegisterUser
-        props:
-          email: string
-          password: string
-      - e: User/UserRegistered
-        props:
-          userId: uuid
-          email: string
-      - v: UserProfile
-    tests:
-      RegistrationCreatesProfile:
-        when:
-          - c: RegisterUser
-            props:
-              email: alice@example.com
-              password: secret123
-        then:
-          - e: User/UserRegistered
-
-      DuplicateEmailRejected:
-        given:
-          - e: User/UserRegistered
-            props:
-              email: alice@example.com
-        when:
-          - c: RegisterUser
-            props:
-              email: alice@example.com
-        then:
-          - x: EmailAlreadyUsed
-```
-
-### Event Storming Notes
-
-Partial slices are valid — useful for early exploration:
-
-```yaml
----
-slices:
-  OrderLifecycle:
-    - e: OrderPlaced
-    - e: PaymentReceived
-    - e: OrderShipped
-    - e: OrderDelivered
-
-  OrderCancellation:
-    - e: OrderPlaced
-    - e: OrderCancelled
-    - e: RefundIssued
-```
+- [Emlang website](https://emlang-project.github.io) — Documentation, examples, and guides
+- [Event Modeling](https://eventmodeling.org) — The methodology behind Emlang
 
 ## License
 

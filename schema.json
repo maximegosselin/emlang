@@ -56,7 +56,8 @@
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/test"
-      }
+      },
+      "minProperties": 1
     },
     "test": {
       "type": "object",
@@ -66,7 +67,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/givenElement"
-          }
+          },
+          "minItems": 1
         },
         "when": {
           "description": "Command being tested",

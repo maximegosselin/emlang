@@ -2,86 +2,66 @@
 
 Emlang is a YAML-based DSL for describing systems with Event Modeling patterns.
 
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
+
 ## Overview
 
-Emlang uses standard YAML syntax, making it compatible with all YAML tooling (syntax highlighting, formatting,
-validation). The domain-specific semantics come from the structure and element prefixes.
-
-An Emlang file contains one or more YAML documents (separated by `---`), each with a `slices:` top-level key.
+- An Emlang file MUST be a valid YAML file
+- Each YAML document MUST contain a `slices` top-level key
+- A file MAY contain multiple YAML documents separated by `---`
+- The root object MUST NOT contain properties other than `slices`
 
 ```yaml
 ---
 slices:
-  # Direct form: list of elements
   SliceName:
     - t: Swimlane/TriggerName
     - c: DoSomething
     - e: SomethingDone
-
-  # Extended form: steps with attached tests
-  AnotherSlice:
-    steps:
-      - t: Swimlane/Trigger
-      - c: DoAction
-      - e: ActionDone
-    tests:
-      TestName:
-        when:
-          - c: DoAction
-        then:
-          - e: ActionDone
 ```
 
 ## Elements
 
-Emlang has 5 element types, each with multiple prefix forms:
+Emlang defines 5 element types, each with multiple prefix forms:
 
-| Type      | Short | Acronym | Long         | Description           |
-|-----------|-------|---------|--------------|------------------------|
-| Trigger   | `t:`  | `trg:`  | `trigger:`   | Initiates an action    |
-| Command   | `c:`  | `cmd:`  | `command:`   | Action/intent          |
-| Event     | `e:`  | `evt:`  | `event:`     | Past fact              |
-| Exception | `x:`  | `err:`  | `exception:` | Failure/error          |
-| View      | `v:`  | —       | `view:`      | Projection/Read Model  |
+| Type      | Short | Acronym | Long         |
+|-----------|-------|---------|--------------|
+| Trigger   | `t:`  | `trg:`  | `trigger:`   |
+| Command   | `c:`  | `cmd:`  | `command:`   |
+| Event     | `e:`  | `evt:`  | `event:`     |
+| Exception | `x:`  | `err:`  | `exception:` |
+| View      | `v:`  | —       | `view:`      |
 
-All prefix forms are semantically equivalent. Choose based on readability preference.
-
-### Element Format
-
-Each element is a YAML list item with exactly one type key and optional properties:
-
-```yaml
-- c: PlaceOrder
-  props:
-    orderId: uuid
-    items: array
-```
-
-An element must have exactly one type key (`t:`, `c:`, `e:`, `x:`, or `v:`). Multiple type keys in the same item is invalid:
+- All prefix forms of a given type are semantically equivalent
+- An element MUST contain exactly one type key
+- An element MUST NOT contain more than one type key
+- An element MAY contain a `props` key
+- An element MUST NOT contain keys other than one type key and `props`
 
 ```yaml
+# ✅ Valid
+- c: RegisterUser
+- e: UserRegistered
+
 # ❌ Invalid: two type keys in the same item
 - c: RegisterUser
   e: UserRegistered
-
-# ✅ Valid: separate items
-- c: RegisterUser
-- e: UserRegistered
 ```
 
 ### Naming
 
-Element names are free-form text. Spaces, accents, and special characters are allowed:
+- Element names are free-form text
+- Names MAY contain spaces, accents, and special characters
 
 ```yaml
-- t: Customer/RegistrationForm
 - c: RegisterUser
 - e: Utilisateur enregistré
 ```
 
 ### Swimlanes
 
-Swimlanes are optional and specified with `/` before the element name:
+- Swimlanes are OPTIONAL
+- A swimlane MUST be specified as a prefix separated by `/` before the element name
 
 ```yaml
 - t: Customer/RegistrationForm   # Swimlane: Customer
@@ -91,32 +71,30 @@ Swimlanes are optional and specified with `/` before the element name:
 
 ### Properties
 
-Properties are optional and defined under `props:`. The structure is free-form — consuming tools decide how to interpret
-them.
+- Properties are OPTIONAL
+- Properties MUST be defined under a `props` key
+- The `props` value MUST be an object
+- The structure of `props` is free-form — consuming tools decide how to interpret them
 
 ```yaml
 - c: RegisterUser
   props:
     email: string
     password: string
-
-- e: User/UserRegistered
-  props:
-    userId: uuid
-    email: string
-    registeredAt: iso8601
 ```
 
 ## Slices
 
-A slice is a named sequence of elements representing a business scenario.
+- A slice is a named sequence of elements representing a business scenario
+- A slice MUST contain at least one element
+- A slice MUST be in either direct form or extended form
 
 ### Direct Form
 
-When a slice has no attached tests, use the direct form (list of elements):
+- The direct form is a list of elements
+- SHOULD be used when a slice has no attached tests
 
 ```yaml
----
 slices:
   UserRegistration:
     - t: Customer/RegistrationForm
@@ -127,17 +105,18 @@ slices:
 
 ### Extended Form
 
-When a slice has attached tests, use the extended form with `steps:` and `tests:`:
+- The extended form is an object with `steps` and optionally `tests`
+- `steps` is REQUIRED and MUST be an element list
+- `tests` is OPTIONAL
+- The extended form MUST NOT contain properties other than `steps` and `tests`
 
 ```yaml
----
 slices:
   UserRegistration:
     steps:
       - t: Customer/RegistrationForm
       - c: RegisterUser
       - e: User/UserRegistered
-      - v: UserProfile
     tests:
       EmailMustBeUnique:
         given:
@@ -152,14 +131,12 @@ slices:
           - x: EmailAlreadyInUse
 ```
 
-Both forms are valid and can coexist in the same document. A parser detects the form by checking if the slice value is a list (direct) or a mapping with `steps:` (extended).
-
 ### Multiple Slices
 
-Multiple slices can be defined in the same document:
+- Multiple slices MAY be defined in the same document
+- Both direct and extended forms MAY coexist in the same document
 
 ```yaml
----
 slices:
   UserRegistration:
     - t: Customer/RegistrationForm
@@ -175,10 +152,10 @@ slices:
 
 ### Anonymous Slices
 
-A slice without a name is valid but not referenceable:
+- `slices` MAY be an element list instead of a named object
+- Anonymous slices are not referenceable by name
 
 ```yaml
----
 slices:
   - t: Customer/ContactForm
   - c: SubmitInquiry
@@ -187,141 +164,72 @@ slices:
 
 ## Tests
 
-A test verifies behavior using a Given-When-Then structure. Tests are always defined inside a slice using the extended form.
+- Tests MUST be defined inside a slice using the extended form
+- A slice MUST contain at least one test if `tests` is present
+- Each test follows a Given-When-Then structure
 
 ### Test Structure
 
-Each test has three sections:
+| Section  | Required | Allowed element types      |
+|----------|----------|----------------------------|
+| `given`  | No       | `e` (event), `v` (view)    |
+| `when`   | Yes      | `c` (command)              |
+| `then`   | Yes      | `e` (event), `v` (view), `x` (exception) |
 
-| Section  | Required | Contains                          |
-|----------|----------|-----------------------------------|
-| `given:` | No       | Pre-conditions (`e:`, `v:`)       |
-| `when:`  | Yes      | Single command (`c:`)             |
-| `then:`  | Yes      | Expected results (`e:`, `v:`, `x:`) |
+- `when` is REQUIRED and MUST contain exactly one command element
+- `then` is REQUIRED and MUST contain at least one element
+- `given` is OPTIONAL but, if present, MUST contain at least one element
+- `given` elements MUST be events or views
+- `then` elements MUST be events, views, or exceptions
+- A test MUST NOT contain properties other than `given`, `when`, and `then`
 
 ```yaml
----
-slices:
-  UserRegistration:
-    steps:
-      - t: Customer/RegistrationForm
-      - c: RegisterUser
+tests:
+  EmailMustBeUnique:
+    given:
       - e: User/UserRegistered
-    tests:
-      EmailMustBeUnique:
-        given:
-          - e: User/UserRegistered
-            props:
-              email: joe@example.com
-        when:
-          - c: RegisterUser
-            props:
-              email: joe@example.com
-        then:
-          - x: EmailAlreadyInUse
-```
-
-### Test with Exception
-
-```yaml
----
-slices:
-  PasswordReset:
-    steps:
-      - t: User/ResetForm
-      - c: RequestPasswordReset
-      - e: User/PasswordResetRequested
-    tests:
-      RateLimitExceeded:
-        given:
-          - e: User/PasswordResetRequested
-            props:
-              userId: 123
-              requestedAt: 2024-01-24T10:00:00Z
-        when:
-          - c: RequestPasswordReset
-            props:
-              userId: 123
-        then:
-          - x: TooManyResetAttempts
-```
-
-### Test with View
-
-Verify both events and view projections:
-
-```yaml
----
-slices:
-  UserRegistration:
-    steps:
-      - t: Customer/RegistrationForm
+        props:
+          email: joe@example.com
+    when:
       - c: RegisterUser
-      - e: UserRegistered
-      - v: UserProfile
-    tests:
-      ProfileUpdatedAfterRegistration:
-        when:
-          - c: RegisterUser
-            props:
-              email: joe@example.com
-        then:
-          - e: UserRegistered
-          - v: UserProfile
-            props:
-              email: joe@example.com
-              status: pending
+        props:
+          email: joe@example.com
+    then:
+      - x: EmailAlreadyInUse
 ```
 
 ### Multiple Tests
 
-```yaml
----
-slices:
-  UserRegistration:
-    steps:
-      - t: Customer/RegistrationForm
-      - c: RegisterUser
-      - e: UserRegistered
-    tests:
-      EmailMustBeUnique:
-        given:
-          - e: UserRegistered
-            props:
-              email: joe@example.com
-        when:
-          - c: RegisterUser
-            props:
-              email: joe@example.com
-        then:
-          - x: EmailAlreadyInUse
+- A slice MAY contain multiple named tests
 
-      EmailMustBeValid:
-        when:
-          - c: RegisterUser
-            props:
-              email: not-an-email
-        then:
-          - x: InvalidEmailFormat
+```yaml
+tests:
+  EmailMustBeUnique:
+    given:
+      - e: UserRegistered
+        props:
+          email: joe@example.com
+    when:
+      - c: RegisterUser
+        props:
+          email: joe@example.com
+    then:
+      - x: EmailAlreadyInUse
+
+  PasswordMustBeStrong:
+    when:
+      - c: RegisterUser
+        props:
+          password: "123"
+    then:
+      - x: PasswordTooWeak
 ```
 
 ## Document Structure
 
-### Single Document
-
-```yaml
----
-slices:
-  UserRegistration:
-    - t: Customer/RegistrationForm
-    - c: RegisterUser
-    - e: User/UserRegistered
-    - v: UserProfile
-```
-
-### Multiple Documents
-
-Use `---` to separate YAML documents in a single file:
+- A file MAY contain one or more YAML documents
+- Documents MUST be separated by `---`
+- Each document MUST independently conform to this specification
 
 ```yaml
 ---
@@ -350,110 +258,12 @@ slices:
 
 ## Comments
 
-Standard YAML comments with `#`:
+- Standard YAML comments (`#`) MAY be used anywhere
 
 ```yaml
----
 slices:
   OrderPlacement:
     - t: Customer/ProductPage    # User clicks "Buy Now"
     - c: PlaceOrder              # Validates inventory
-      props:
-        productId: uuid
-        quantity: int
     - e: Order/OrderPlaced       # Core domain event
-    - v: OrderConfirmation       # Shows order details
-```
-
-## Complete Example
-
-```yaml
----
-slices:
-  # Extended form: slice with attached tests
-  UserRegistration:
-    steps:
-      - t: Customer/RegistrationForm
-      - c: RegisterUser
-        props:
-          email: string
-          password: string
-      - e: User/UserRegistered
-        props:
-          userId: uuid
-          email: string
-          registeredAt: iso8601
-      - e: User/WelcomeEmailSent
-      - v: UserProfile
-    tests:
-      EmailMustBeUnique:
-        given:
-          - e: User/UserRegistered
-            props:
-              email: joe@example.com
-        when:
-          - c: RegisterUser
-            props:
-              email: joe@example.com
-        then:
-          - x: EmailAlreadyInUse
-
-      PasswordMustBeStrong:
-        when:
-          - c: RegisterUser
-            props:
-              email: jane@example.com
-              password: "123"
-        then:
-          - x: PasswordTooWeak
-
-  # Direct form: slice without attached tests
-  EmailVerification:
-    - t: User/VerificationLink
-    - c: VerifyEmail
-      props:
-        token: string
-    - e: User/EmailVerified
-    - v: UserProfile
-
----
-slices:
-  OrderPlacement:
-    steps:
-      - t: Customer/Cart
-      - c: PlaceOrder
-        props:
-          customerId: uuid
-          items: array
-      - e: Order/OrderPlaced
-        props:
-          orderId: uuid
-          totalAmount: decimal
-      - e: Inventory/StockReserved
-      - e: Payment/PaymentRequested
-      - v: OrderConfirmation
-    tests:
-      CannotCancelShippedOrder:
-        given:
-          - e: Order/OrderShipped
-            props:
-              orderId: order-123
-        when:
-          - c: CancelOrder
-            props:
-              orderId: order-123
-        then:
-          - x: OrderAlreadyShipped
-
-  # Direct form
-  OrderCancellation:
-    - t: Customer/OrderDetails
-    - c: CancelOrder
-      props:
-        orderId: uuid
-        reason: string
-    - e: Order/OrderCancelled
-    - e: Inventory/StockReleased
-    - e: Payment/RefundInitiated
-    - v: OrderDetails
 ```
